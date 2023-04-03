@@ -504,9 +504,10 @@ armor.set_player_armor = function(self, player)
 		player_monoids.speed:add_change(player, physics.speed,
 			"3d_armor:physics")
 		player_monoids.jump:add_change(player, physics.jump,
-			"3d_armor:physics")
-		player_monoids.gravity:add_change(player, physics.gravity,
-			"3d_armor:physics")
+			"3d_armor:physicss")
+		-- this is break gravity for space when change armor...
+		--player_monoids.gravity:add_change(player, physics.gravity,
+		--	"3d_armor:physics")
 	elseif use_pova_mod then
 		-- only add the changes, not the default 1.0 for each physics setting
 		pova.add_override(name, "3d_armor", {
