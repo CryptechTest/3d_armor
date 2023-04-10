@@ -23,7 +23,7 @@ end)
 unified_inventory.register_button("armor", {
 	type = "image",
 	image = "inventory_plus_armor.png",
-	tooltip = S("3D Armor")
+	tooltip = S("Equipment")
 })
 
 unified_inventory.register_page("armor", {
