@@ -5,7 +5,7 @@ local last_punch_time = {}
 local pending_players = {}
 local timer = 0
 
-dofile(modpath.."/api.lua")
+dofile(modpath .. "/api.lua")
 
 -- local functions
 local F = minetest.formspec_escape
@@ -13,24 +13,24 @@ local S = armor.get_translator
 
 -- integration test
 if minetest.settings:get_bool("enable_3d_armor_integration_test") then
-	dofile(modpath.."/integration_test.lua")
+	dofile(modpath .. "/integration_test.lua")
 end
 
 
 -- Legacy Config Support
 
-local input = io.open(modpath.."/armor.conf", "r")
+local input = io.open(modpath .. "/armor.conf", "r")
 if input then
-	dofile(modpath.."/armor.conf")
+	dofile(modpath .. "/armor.conf")
 	input:close()
 end
-input = io.open(worldpath.."/armor.conf", "r")
+input = io.open(worldpath .. "/armor.conf", "r")
 if input then
-	dofile(worldpath.."/armor.conf")
+	dofile(worldpath .. "/armor.conf")
 	input:close()
 end
 for name, _ in pairs(armor.config) do
-	local global = "ARMOR_"..name:upper()
+	local global = "ARMOR_" .. name:upper()
 	if minetest.global_exists(global) then
 		armor.config[name] = _G[global]
 	end
@@ -45,20 +45,20 @@ end
 -- Load Configuration
 
 for name, config in pairs(armor.config) do
-	local setting = minetest.settings:get("armor_"..name)
+	local setting = minetest.settings:get("armor_" .. name)
 	if type(config) == "number" then
 		setting = tonumber(setting)
 	elseif type(config) == "string" then
 		setting = tostring(setting)
 	elseif type(config) == "boolean" then
-		setting = minetest.settings:get_bool("armor_"..name)
+		setting = minetest.settings:get_bool("armor_" .. name)
 	end
 	if setting ~= nil then
 		armor.config[name] = setting
 	end
 end
 for material, _ in pairs(armor.materials) do
-	local key = "material_"..material
+	local key = "material_" .. material
 	if armor.config[key] == false then
 		armor.materials[material] = nil
 	end
@@ -70,9 +70,9 @@ armor.config.set_elements = string.split(t_set_elements, " ")
 
 -- Remove torch damage if fire_protect_torch == false
 if armor.config.fire_protect_torch == false and armor.config.fire_protect == true then
-	for k,v in pairs(armor.fire_nodes) do
-		for k2,v2 in pairs(v) do
-			if string.find (v2,"torch") then
+	for k, v in pairs(armor.fire_nodes) do
+		for k2, v2 in pairs(v) do
+			if string.find(v2, "torch") then
 				armor.fire_nodes[k] = nil
 			end
 		end
@@ -82,15 +82,15 @@ end
 -- Mod Compatibility
 
 if minetest.get_modpath("technic") then
-	armor.formspec = armor.formspec..
-		"label[5,2.5;"..F(S("Radiation"))..": armor_group_radiation]"
+	armor.formspec = armor.formspec ..
+		"label[5,2.5;" .. F(S("Radiation")) .. ": armor_group_radiation]"
 	armor:register_armor_group("radiation")
 end
-local skin_mods = {"skins", "u_skins", "simple_skins", "wardrobe"}
+local skin_mods = { "skins", "u_skins", "simple_skins", "wardrobe" }
 for _, mod in pairs(skin_mods) do
 	local path = minetest.get_modpath(mod)
 	if path then
-		local dir_list = minetest.get_dir_list(path.."/textures")
+		local dir_list = minetest.get_dir_list(path .. "/textures")
 		for _, fn in pairs(dir_list) do
 			if fn:find("_preview.png$") then
 				armor:add_preview(fn)
@@ -103,18 +103,18 @@ end
 
 -- Armor Initialization
 
-armor.formspec = armor.formspec..
-	"label[5,1;"..F(S("Level"))..": armor_level]"..
-	"label[5,1.5;"..F(S("Heal"))..": armor_attr_heal]"
+armor.formspec = armor.formspec ..
+	"label[5,1;" .. F(S("Level")) .. ": armor_level]" ..
+	"label[5,1.5;" .. F(S("Heal")) .. ": armor_attr_heal]"
 if armor.config.fire_protect then
-	armor.formspec = armor.formspec.."label[5,2;"..F(S("Fire"))..": armor_attr_fire]"
+	armor.formspec = armor.formspec .. "label[5,2;" .. F(S("Fire")) .. ": armor_attr_fire]"
 end
 armor:register_on_damage(function(player, index, stack)
 	local name = player:get_player_name()
 	local def = stack:get_definition()
 	if name and def and def.description and stack:get_wear() > 60100 then
 		minetest.chat_send_player(name, S("Your @1 is almost broken!", def.description))
-		minetest.sound_play("default_tool_breaks", {to_player = name, gain = 2.0})
+		minetest.sound_play("default_tool_breaks", { to_player = name, gain = 2.0 })
 	end
 end)
 armor:register_on_destroy(function(player, index, stack)
@@ -122,7 +122,7 @@ armor:register_on_destroy(function(player, index, stack)
 	local def = stack:get_definition()
 	if name and def and def.description then
 		minetest.chat_send_player(name, S("Your @1 got destroyed!", def.description))
-		minetest.sound_play("default_tool_breaks", {to_player = name, gain = 2.0})
+		minetest.sound_play("default_tool_breaks", { to_player = name, gain = 2.0 })
 	end
 end)
 
@@ -167,7 +167,7 @@ local function validate_armor_inventory(player)
 				-- to receive items back they never really had. I am not certain
 				-- so remove the is_singleplayer check at your own risk :]
 				if minetest.is_singleplayer() and player_inv and
-						player_inv:room_for_item("main", stack) then
+					player_inv:room_for_item("main", stack) then
 					player_inv:add_item("main", stack)
 				end
 			end
@@ -186,7 +186,7 @@ local function init_player_armor(initplayer)
 	if not name or not pos then
 		return false
 	end
-	local armor_inv = minetest.create_detached_inventory(name.."_armor", {
+	local armor_inv = minetest.create_detached_inventory(name .. "_armor", {
 		on_put = function(inv, listname, index, stack, player)
 			validate_armor_inventory(player)
 			armor:save_armor_inventory(player)
@@ -213,8 +213,8 @@ local function init_player_armor(initplayer)
 			for i = 1, 6 do
 				local stack = inv:get_stack("armor", i)
 				local def = stack:get_definition() or {}
-				if def.groups and def.groups["armor_"..element]
-						and i ~= index then
+				if def.groups and def.groups["armor_" .. element]
+					and i ~= index then
 					return 0
 				end
 			end
@@ -237,14 +237,14 @@ local function init_player_armor(initplayer)
 	if not armor:load_armor_inventory(initplayer) and armor.migrate_old_inventory then
 		local player_inv = initplayer:get_inventory()
 		player_inv:set_size("armor", 6)
-		for i=1, 6 do
+		for i = 1, 6 do
 			local stack = player_inv:get_stack("armor", i)
 			armor_inv:set_stack("armor", i, stack)
 		end
 		armor:save_armor_inventory(initplayer)
 		player_inv:set_size("armor", 0)
 	end
-	for i=1, 6 do
+	for i = 1, 6 do
 		local stack = armor_inv:get_stack("armor", i)
 		if stack:get_count() > 0 then
 			armor:run_callbacks("on_equip", initplayer, i, stack)
@@ -271,13 +271,13 @@ local function init_player_armor(initplayer)
 		skin = skin,
 		armor = "3d_armor_trans.png",
 		wielditem = "3d_armor_trans.png",
-		preview = armor.default_skin.."_preview.png",
+		preview = armor.default_skin .. "_preview.png",
 	}
 	local texture_path = minetest.get_modpath("player_textures")
 	if texture_path then
-		local dir_list = minetest.get_dir_list(texture_path.."/textures")
+		local dir_list = minetest.get_dir_list(texture_path .. "/textures")
 		for _, fn in pairs(dir_list) do
-			if fn == "player_"..name..".png" then
+			if fn == "player_" .. name .. ".png" then
 				armor.textures[name].skin = fn
 				break
 			end
@@ -292,21 +292,21 @@ end
 player_api.register_model("3d_armor_character.b3d", {
 	animation_speed = 30,
 	textures = {
-		armor.default_skin..".png",
+		armor.default_skin .. ".png",
 		"3d_armor_trans.png",
 		"3d_armor_trans.png",
 	},
 	animations = {
-		stand = {x=0, y=79},
-		lay = {x=162, y=166},
-		walk = {x=168, y=187},
-		mine = {x=189, y=198},
-		walk_mine = {x=200, y=219},
-		sit = {x=81, y=160},
+		stand = { x = 0, y = 79 },
+		lay = { x = 162, y = 166 },
+		walk = { x = 168, y = 187 },
+		mine = { x = 189, y = 198 },
+		walk_mine = { x = 200, y = 219 },
+		sit = { x = 81, y = 160 },
 		-- compatibility w/ the emote mod
-		wave = {x = 192, y = 196, override_local = true},
-		point = {x = 196, y = 196, override_local = true},
-		freeze = {x = 205, y = 205, override_local = true},
+		wave = { x = 192, y = 196, override_local = true },
+		point = { x = 196, y = 196, override_local = true },
+		freeze = { x = 205, y = 205, override_local = true },
 	},
 })
 
@@ -352,7 +352,7 @@ if armor.config.drop == true or armor.config.destroy == true then
 			return
 		end
 		local drop = {}
-		for i=1, armor_inv:get_size("armor") do
+		for i = 1, armor_inv:get_size("armor") do
 			local stack = armor_inv:get_stack("armor", i)
 			if stack:get_count() > 0 then
 				table.insert(drop, stack)
@@ -368,7 +368,7 @@ if armor.config.drop == true or armor.config.destroy == true then
 				local meta = nil
 				local maxp = vector.add(pos, 16)
 				local minp = vector.subtract(pos, 16)
-				local bones = minetest.find_nodes_in_area(minp, maxp, {"bones:bones"})
+				local bones = minetest.find_nodes_in_area(minp, maxp, { "bones:bones" })
 				for _, p in pairs(bones) do
 					local m = minetest.get_meta(p)
 					if m:get_string("owner") == name then
@@ -378,7 +378,7 @@ if armor.config.drop == true or armor.config.destroy == true then
 				end
 				if meta then
 					local inv = meta:get_inventory()
-					for _,stack in ipairs(drop) do
+					for _, stack in ipairs(drop) do
 						if inv:room_for_item("main", stack) then
 							inv:add_item("main", stack)
 						else
@@ -386,7 +386,7 @@ if armor.config.drop == true or armor.config.destroy == true then
 						end
 					end
 				else
-					for _,stack in ipairs(drop) do
+					for _, stack in ipairs(drop) do
 						armor.drop_armor(pos, stack)
 					end
 				end
@@ -401,7 +401,7 @@ end
 
 if armor.config.punch_damage == true then
 	minetest.register_on_punchplayer(function(player, hitter,
-			time_from_last_punch, tool_capabilities)
+											  time_from_last_punch, tool_capabilities)
 		local name = player:get_player_name()
 		local hit_ip = hitter:is_player()
 		if name and hit_ip and minetest.is_protected(player:get_pos(), "") then
@@ -414,21 +414,29 @@ if armor.config.punch_damage == true then
 end
 
 minetest.register_on_player_hpchange(function(player, hp_change, reason)
-	if player and reason.type ~= "drown" and reason.hunger == nil
-			and hp_change < 0 then
-		local name = player:get_player_name()
-		if name then
-			local heal = armor.def[name].heal
-			if heal >= math.random(100) then
-				hp_change = 0
-			end
-			-- check if armor damage was handled by fire or on_punchplayer
-			local time = last_punch_time[name] or 0
-			if time == 0 or time + 1 < minetest.get_gametime() then
-				armor:punch(player)
-			end
+	if not minetest.is_player(player) then
+		return hp_change
+	end
+
+	if reason.type == "drown" or reason.hunger or hp_change >= 0 then
+		return hp_change
+	end
+
+	local name = player:get_player_name()
+	local properties = player:get_properties()
+	local hp = player:get_hp()
+	if hp + hp_change < properties.hp_max then
+		local heal = armor.def[name].heal
+		if heal >= math.random(100) then
+			hp_change = 0
+		end
+		-- check if armor damage was handled by fire or on_punchplayer
+		local time = last_punch_time[name] or 0
+		if time == 0 or time + 1 < minetest.get_gametime() then
+			armor:punch(player)
 		end
 	end
+
 	return hp_change
 end, true)
 
@@ -436,13 +444,13 @@ minetest.register_globalstep(function(dtime)
 	timer = timer + dtime
 
 	if armor.config.feather_fall == true then
-		for _,player in pairs(minetest.get_connected_players()) do
+		for _, player in pairs(minetest.get_connected_players()) do
 			local name = player:get_player_name()
 			if armor.def[name].feather > 0 then
 				local vel_y = player:get_velocity().y
 				if vel_y < 0 and vel_y < 3 then
 					vel_y = -(vel_y * 0.05)
-					player:add_velocity({x = 0, y = vel_y, z = 0})
+					player:add_velocity({ x = 0, y = vel_y, z = 0 })
 				end
 			end
 		end
@@ -467,10 +475,10 @@ minetest.register_globalstep(function(dtime)
 
 	-- water breathing protection, added by TenPlus1
 	if armor.config.water_protect == true then
-		for _,player in pairs(minetest.get_connected_players()) do
+		for _, player in pairs(minetest.get_connected_players()) do
 			local name = player:get_player_name()
 			if armor.def[name].water > 0 and
-					player:get_breath() < 10 then
+				player:get_breath() < 10 then
 				player:set_breath(10)
 			end
 		end
@@ -478,20 +486,18 @@ minetest.register_globalstep(function(dtime)
 end)
 
 if armor.config.fire_protect == true then
-
 	-- make torches hurt
-	minetest.override_item("default:torch", {damage_per_second = 1})
-	minetest.override_item("default:torch_wall", {damage_per_second = 1})
-	minetest.override_item("default:torch_ceiling", {damage_per_second = 1})
+	minetest.override_item("default:torch", { damage_per_second = 1 })
+	minetest.override_item("default:torch_wall", { damage_per_second = 1 })
+	minetest.override_item("default:torch_ceiling", { damage_per_second = 1 })
 
 	-- check player damage for any hot nodes we may be protected against
 	minetest.register_on_player_hpchange(function(player, hp_change, reason)
-
 		if reason.type == "node_damage" and reason.node then
 			-- fire protection
 			if armor.config.fire_protect == true and hp_change < 0 then
 				local name = player:get_player_name()
-				for _,igniter in pairs(armor.fire_nodes) do
+				for _, igniter in pairs(armor.fire_nodes) do
 					if reason.node == igniter[1] then
 						if armor.def[name].fire >= igniter[2] then
 							hp_change = 0
