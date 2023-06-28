@@ -413,6 +413,72 @@ if armor.config.punch_damage == true then
 	end)
 end
 
+-- custom particle effects
+local function effect(pos, amount, texture, min_size, max_size, radius, gravity, glow, fall)
+
+	radius = radius or 2
+	min_size = min_size or 0.5
+	max_size = max_size or 1
+	gravity = gravity or -10
+	glow = glow or 0
+
+	if fall == true then
+		fall = 0
+	elseif fall == false then
+		fall = radius
+	else
+		fall = -radius
+	end
+
+	minetest.add_particlespawner({
+		amount = amount,
+		time = 0.25,
+		minpos = pos,
+		maxpos = pos,
+		minvel = {x = -radius, y = fall, z = -radius},
+		maxvel = {x = radius, y = radius, z = radius},
+		minacc = {x = 0, y = gravity, z = 0},
+		maxacc = {x = 0, y = gravity, z = 0},
+		minexptime = 0.1,
+		maxexptime = 1,
+		minsize = min_size,
+		maxsize = max_size,
+		texture = texture,
+		glow = glow
+	})
+end
+
+local function do_blood_effects(obj, damage_amount)
+	local blood_texture = {"mobs_blood_1.png", "mobs_blood_2.png", "mobs_blood_3.png"}
+	local disable_blood = false
+	local blood_amount = 7
+
+	-- blood_particles
+	if not disable_blood and blood_amount > 0 then
+
+		local pos = obj:get_pos()
+		local blood = blood_texture
+		local amount = blood_amount
+		local damage = math.abs(damage_amount)
+
+		pos.y = pos.y + 1.4
+
+		-- lots of damage = more blood :)
+		if damage > 20 then
+			amount = blood_amount * 4
+		elseif damage > 10 then
+			amount = blood_amount * 2
+		end
+
+		-- do we have a single blood texture or multiple?
+		if type(blood_texture) == "table" then
+			blood = blood_texture[math.random(#blood_texture)]
+		end
+
+		effect(pos, amount, blood, 0.25, 1.5, 1.75, -6, nil, true)
+	end
+end
+
 minetest.register_on_player_hpchange(function(player, hp_change, reason)
 	if not minetest.is_player(player) then
 		return hp_change
@@ -435,6 +501,10 @@ minetest.register_on_player_hpchange(function(player, hp_change, reason)
 		if time == 0 or time + 1 < minetest.get_gametime() then
 			armor:punch(player)
 		end
+	end
+
+	if hp_change < 0 and minetest.get_modpath("mobs") then
+		do_blood_effects(player, hp_change)
 	end
 
 	return hp_change
