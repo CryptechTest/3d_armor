@@ -689,11 +689,13 @@ armor.equip = function(self, player, itemstack)
 				index = i
 			end
 		end
-		local stack = itemstack:take_item()
-		armor_inv:set_stack("armor", index, stack)
-		self:run_callbacks("on_equip", player, index, stack)
-		self:set_player_armor(player)
-		self:save_armor_inventory(player)
+		if index then
+			local stack = itemstack:take_item()
+			armor_inv:set_stack("armor", index, stack)
+			self:run_callbacks("on_equip", player, index, stack)
+			self:set_player_armor(player)
+			self:save_armor_inventory(player)
+		end
 	end
 	return itemstack
 end
