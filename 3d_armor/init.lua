@@ -449,8 +449,9 @@ local function effect(pos, amount, texture, min_size, max_size, radius, gravity,
 end
 
 local function do_blood_effects(obj, damage_amount)
+	local has_blood = minetest.get_modpath("blood")
 	local blood_texture = {"mobs_blood_1.png", "mobs_blood_2.png", "mobs_blood_3.png"}
-	local disable_blood = false
+	local disable_blood = has_blood
 	local blood_amount = 7
 
 	-- blood_particles
