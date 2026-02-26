@@ -514,6 +514,10 @@ minetest.register_on_player_hpchange(function(player, hp_change, reason)
 		end
 	end
 
+	if hp_change < 0 and core.get_modpath("mobs") then
+		do_blood_effects(player, hp_change)
+	end
+
 	return hp_change
 end, true)
 
