@@ -108,18 +108,16 @@ local armor_textures = setmetatable({}, {
 	end
 })
 
-armor = {
+local armor_fields = {
 	timer = 0,
 	elements = {"head", "torso", "legs", "feet"},
 	physics = {"jump", "speed", "gravity"},
 	attributes = {"heal", "fire", "water", "feather"},
-	formspec = "image[2.5,0;2,4;armor_preview]"..
-		default.gui_bg..
-		default.gui_bg_img..
-		default.gui_slots..
-		default.get_hotbar_bg(0, 4.7)..
-		"list[current_player;main;0,4.7;8,1;]"..
-		"list[current_player;main;0,5.85;8,3;8]",
+	formspec = (
+		"image[2.5,0;2,4;armor_preview]" ..
+		armor.add_formspec_list("current_player", "main", 0, 4.7, 8, 1) ..
+		armor.add_formspec_list("current_player", "main", 0, 5.85, 8, 3, 8)
+	),
 	def = armor_def,
 	textures = armor_textures,
 	default_skin = "character",
@@ -156,13 +154,15 @@ armor = {
 		on_destroy = {},
 	},
 	migrate_old_inventory = true,
-  version = "0.4.13",
   get_translator = S
 }
 
+for k, v in pairs(armor_fields) do
+	armor[k] = v
+end
+
 armor.config = {
 	init_delay = 2,
-	init_times = 10,
 	bones_delay = 1,
 	update_time = 1,
 	drop = minetest.get_modpath("bones") ~= nil,
@@ -353,7 +353,7 @@ armor.update_player_visuals = function(self, player)
 	end
 	local name = player:get_player_name()
 	if self.textures[name] then
-		default.player_set_textures(player, {
+		player_api.set_textures(player, {
 			self.textures[name].skin,
 			self.textures[name].armor,
 			self.textures[name].wielditem,
@@ -374,7 +374,7 @@ armor.set_player_armor = function(self, player)
 	local state = 0
 	local count = 0
 	local preview = armor:get_preview(name)
-	local texture = "3d_armor_trans.png"
+	local texture = "blank.png"
 	local physics = {}
 	local attributes = {}
 	local levels = {}
@@ -416,7 +416,7 @@ armor.set_player_armor = function(self, player)
 				end
 				-- DEPRECATED, use armor_groups instead
 				if def.groups["armor_radiation"] and levels["radiation"] then
-					levels["radiation"] = def.groups["armor_radiation"]
+					levels["radiation"] = levels["radiation"] + def.groups["armor_radiation"]
 				end
 			end
 			local item = stack:get_name()
@@ -632,6 +632,9 @@ end
 armor.damage = function(self, player, index, stack, use)
 	local old_stack = ItemStack(stack)
 	local worn_armor = armor:get_weared_armor_elements(player)
+	if not worn_armor then
+		return
+	end
 	local armor_worn_cnt = 0
 	for k,v in pairs(worn_armor) do
 		armor_worn_cnt = armor_worn_cnt + 1
@@ -678,24 +681,31 @@ armor.equip = function(self, player, itemstack)
     local name, armor_inv = self:get_valid_player(player, "[equip]")
     local armor_element = self:get_element(itemstack:get_name())
 	if name and armor_element then
-		local index
-		for i=1, armor_inv:get_size("armor") do
-			local stack = armor_inv:get_stack("armor", i)
+		local index, old_stack
+		for i, stack in ipairs(armor_inv:get_list("armor")) do
 			if self:get_element(stack:get_name()) == armor_element then
+				-- prevents equiping an armor that would unequip a cursed armor.
+				if minetest.get_item_group(stack:get_name(), "cursed") ~= 0 then
+					return itemstack
+				end
 				index = i
-				self:unequip(player, armor_element)
+				old_stack = stack
+				self:run_callbacks("on_unequip", player, i, stack)
 				break
 			elseif not index and stack:is_empty() then
 				index = i
 			end
 		end
-		if index then
-			local stack = itemstack:take_item()
-			armor_inv:set_stack("armor", index, stack)
-			self:run_callbacks("on_equip", player, index, stack)
-			self:set_player_armor(player)
-			self:save_armor_inventory(player)
+		if not index then -- armor inventory is full with other armor elements
+			return itemstack
 		end
+		-- Swap the stack at 'index' with 'itemstack'
+		armor_inv:set_stack("armor", index, itemstack)
+		self:run_callbacks("on_equip", player, index, itemstack)
+		self:set_player_armor(player)
+		self:save_armor_inventory(player)
+		-- Remainder: the previous slot content
+		return old_stack or ItemStack()
 	end
 	return itemstack
 end
@@ -716,11 +726,14 @@ armor.unequip = function(self, player, armor_element)
 		if self:get_element(stack:get_name()) == armor_element then
 			armor_inv:set_stack("armor", i, "")
 			minetest.after(0, function()
-				local inv = player:get_inventory()
-				if inv:room_for_item("main", stack) then
-					inv:add_item("main", stack)
-				else
-					minetest.add_item(player:get_pos(), stack)
+				local pplayer = minetest.get_player_by_name(name)
+				if pplayer then -- player is still online
+					local inv = pplayer:get_inventory()
+					if inv:room_for_item("main", stack) then
+						inv:add_item("main", stack)
+					else
+						minetest.add_item(pplayer:get_pos(), stack)
+					end
 				end
 			end)
 			self:run_callbacks("on_unequip", player, i, stack)
@@ -805,9 +818,6 @@ end
 --  @tparam[opt] bool listring Use `listring` formspec element (default: `false`).
 --  @treturn string Formspec formatted string.
 armor.get_armor_formspec = function(self, name, listring)
-	if armor.def[name].init_time == 0 then
-		return "label[0,0;Armor not initialized!]"
-	end
 	local formspec = armor.formspec..
 		"list[detached:"..name.."_armor;armor;0,0.5;2,3;]"
 	if listring == true then
